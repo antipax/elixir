@@ -2202,12 +2202,13 @@ defmodule Kernel do
     raise ArgumentError, "expected 0 or 1 argument for @#{name}, got: #{length(args)}"
   end
 
-  defp typespec(:type),     do: :deftype
-  defp typespec(:typep),    do: :deftypep
-  defp typespec(:opaque),   do: :defopaque
-  defp typespec(:spec),     do: :defspec
-  defp typespec(:callback), do: :defcallback
-  defp typespec(_),         do: false
+  defp typespec(:type),          do: :deftype
+  defp typespec(:typep),         do: :deftypep
+  defp typespec(:opaque),        do: :defopaque
+  defp typespec(:spec),          do: :defspec
+  defp typespec(:callback),      do: :defcallback
+  defp typespec(:macrocallback), do: :defmacrocallback
+  defp typespec(_),              do: false
 
   @doc """
   Returns the binding for the given context as a keyword list.
@@ -2647,13 +2648,24 @@ defmodule Kernel do
   defp in_range(left, first, last) do
     case is_integer(first) and is_integer(last) do
       true  ->
-        quote do
-          :erlang.is_integer(unquote(left))
-          and
-          unquote(case first <= last do
-                    true  -> increasing_compare(left, first, last)
-                    false -> decreasing_compare(left, first, last)
-                  end)
+        case first < last do
+          true ->
+            quote do
+              :erlang.is_integer(unquote(left)) and
+                unquote(increasing_compare(left, first, last))
+            end
+          false ->
+            case first > last do
+              true ->
+                quote do
+                  :erlang.is_integer(unquote(left)) and
+                    unquote(decreasing_compare(left, first, last))
+                end
+              false ->
+                quote do
+                  unquote(left) === unquote(first)
+                end
+            end
         end
       false ->
         quote do
@@ -2789,6 +2801,14 @@ defmodule Kernel do
         alias Foo.Bar
         # code here can refer to `Foo.Bar` as just `Bar`
       end
+
+  ## Module names
+
+  A module name can be any atom, but Elixir provides a special syntax which is
+  usually used for module names. What is called a module name is an upper case
+  character followed by any alphanumeric characters or `_` or `.`. This
+  identifier is equivilant to an atom prefixed by `Elixir.`. So in the
+  `defmodule Foo` example `Foo` is equivalent to `:"Elixir.Foo"`
 
   ## Dynamic names
 
@@ -2941,6 +2961,30 @@ defmodule Kernel do
 
   In the example above, a `sum/2` function is defined; this function receives
   two arguments and returns their sum.
+
+  ## Names
+
+  Varable and function names have the following syntax: A lower case letter or
+  underscore followed by any number of lower or upper case numbers, letters,
+  or underscores and optionally ending in `!` or `?`.
+
+  For variables, any identifier starting with an underscore shoud indicate an
+  unused variable. For example
+
+      def foo(bar) do
+        []
+      end
+      # warning: variable bar is unused
+
+      def foo(_bar) do
+        []
+      end
+      # no warning
+
+      def foo(_bar) do
+        _bar
+      end
+      # warning: the underscored variable "_bar" is used after being set
 
   """
   defmacro def(call, expr \\ nil) do
