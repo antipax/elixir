@@ -8,9 +8,10 @@ defmodule Kernel.Typespec do
   tools such as [Dialyzer](http://www.erlang.org/doc/man/dialyzer.html) can
   analyze the code with typespecs to find bugs.
 
-  The attributes `@type`, `@opaque`, `@typep`, `@spec` and `@callback` available
-  in modules are handled by the equivalent macros defined by this module. See
-  sub-sections "Defining a type" and "Defining a specification" below.
+  The attributes `@type`, `@opaque`, `@typep`, `@spec`, `@callback` and
+  `@macrocallback` available in modules are handled by the equivalent macros
+  defined by this module. See sub-sections "Defining a type" and "Defining a
+  specification" below.
 
   ## Types and their syntax
 
@@ -137,6 +138,7 @@ defmodule Kernel.Typespec do
 
       @spec function_name(type1, type2) :: return_type
       @callback function_name(type1, type2) :: return_type
+      @macrocallback macro_name(type1, type2) :: Macro.t
 
   Callbacks are used to define the callbacks functions of behaviours (see
   `Behaviour`).
@@ -242,6 +244,22 @@ defmodule Kernel.Typespec do
     end
   end
 
+
+  @doc """
+  Defines a macro callback.
+  This macro is responsible for handling the attribute `@macrocallback`.
+
+  ## Examples
+
+      @macrocallback add(number, number) :: Macro.t
+
+  """
+  defmacro defmacrocallback(spec) do
+    quote do
+      Kernel.Typespec.defspec(:macrocallback, unquote(Macro.escape(spec, unquote: true)), __ENV__)
+    end
+  end
+
   @doc """
   Defines a `type`, `typep` or `opaque` by receiving a typespec expression.
   """
@@ -253,7 +271,7 @@ defmodule Kernel.Typespec do
   Defines a `spec` by receiving a typespec expression.
   """
   def define_spec(kind, expr, env) do
-    Module.store_typespec(env.module, kind, {kind, expr, env})
+    defspec(kind, expr, env)
   end
 
   @doc """
@@ -354,6 +372,20 @@ defmodule Kernel.Typespec do
   def type_to_ast({name, type, args}) do
     args = for arg <- args, do: typespec_to_ast(arg)
     quote do: unquote(name)(unquote_splicing(args)) :: unquote(typespec_to_ast(type))
+  end
+
+  @doc """
+  Returns all callback docs available from the module's beam code.
+
+  The result is returned as a list of tuples where the first element is the pair of type
+  name and arity and the second element is the documentation.
+
+  The module must have a corresponding beam file which can be
+  located by the runtime system.
+  """
+  @spec beam_callbackdocs(module | binary) :: [tuple] | nil
+  def beam_callbackdocs(module) when is_atom(module) or is_binary(module) do
+    Code.get_docs(module, :behaviour_docs)
   end
 
   @doc """
@@ -475,11 +507,90 @@ defmodule Kernel.Typespec do
   def type_to_signature({:::, _, [{name, _, args}, _]}) when is_atom(name),
     do: {name, length(args)}
 
+  defp split_spec({:when, _, [{:::, _, [spec, return]}, guard]}, _default) do
+    {spec, return, guard}
+  end
+
+  defp split_spec({:when, _, [spec, guard]}, default) do
+    {spec, default, guard}
+  end
+
+  defp split_spec({:::, _, [spec, return]}, _default) do
+    {spec, return, []}
+  end
+
+  defp split_spec(spec, default) do
+    {spec, default, []}
+  end
+
+  defp ensure_not_default({:\\, _, [_, _]}) do
+    raise ArgumentError, "default arguments \\\\ not supported in @callback/@macrocallback"
+  end
+
+  defp ensure_not_default(_), do: :ok
+
   ## Macro callbacks
+
+  @doc false
+  def defspec(:callback, expr, caller) do
+    {spec, _, _} = split_spec(expr, quote(do: term))
+
+    case Macro.decompose_call(spec) do
+      {name, args} ->
+        :lists.foreach fn
+          {:::, _, [left, right]} ->
+            ensure_not_default(left)
+            ensure_not_default(right)
+            left
+          other ->
+            ensure_not_default(other)
+            other
+        end, args
+
+        Module.store_typespec(caller.module, :callback, {:callback, expr, caller})
+
+        unless match?("MACRO-" <> _, Atom.to_string(name)) do
+          Kernel.Typespec.store_callback_docs(caller.module, caller.line, :def, name, length(args))
+        end
+      _ ->
+        raise ArgumentError, "invalid syntax in @callback #{Macro.to_string(spec)}"
+    end
+  end
+
+  def defspec(:macrocallback, expr, caller) do
+    {spec, return, guards} = split_spec(expr, quote(do: Macro.t))
+
+    case Macro.decompose_call(spec) do
+      {name, args} ->
+        callback_name = :"MACRO-#{name}"
+        callback_args = [quote(do: env :: Macro.Env.t)|args]
+
+        callback_attr_quote =
+          quote do
+            @callback unquote(callback_name)(unquote_splicing(callback_args)) :: unquote(return) when unquote(guards)
+          end
+
+        Module.eval_quoted(caller.module, callback_attr_quote, [], __ENV__)
+
+        Kernel.Typespec.store_callback_docs(caller.module, caller.line, :defmacro, name, length(args))
+      _ ->
+        raise ArgumentError, "invalid syntax in @macrocallback #{Macro.to_string(spec)}"
+    end
+  end
 
   @doc false
   def defspec(kind, expr, caller) do
     Module.store_typespec(caller.module, kind, {kind, expr, caller})
+  end
+
+  @doc false
+  def store_callback_docs(module, line, kind, name, arity) do
+    doc = Module.get_attribute module, :doc
+    Module.delete_attribute module, :doc
+
+    Module.register_attribute(module, :behaviour_docs, accumulate: true)
+
+    Module.put_attribute module, :behaviour_docs, {{name, arity}, line, kind, doc}
   end
 
   @doc false
