@@ -15,7 +15,7 @@ defmodule Exception do
   """
 
   @typedoc "The exception type"
-  @type t :: %{__struct__: module, __exception__: true}
+  @type t :: %{required(:"__struct__") => module, required(:"__exception__") => true, optional(atom) => any}
 
   @typedoc "The kind handled by formatting functions"
   @type kind :: :error | :exit | :throw | {:EXIT, pid}
