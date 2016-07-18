@@ -1,4 +1,5 @@
 defmodule File do
+log_call()
   @moduledoc ~S"""
   This module contains functions to manipulate files.
 
@@ -92,6 +93,7 @@ defmodule File do
   """
   @spec regular?(Path.t) :: boolean
   def regular?(path) do
+log_call()
     :elixir_utils.read_file_type(IO.chardata_to_string(path)) == {:ok, :regular}
   end
 
@@ -100,6 +102,7 @@ defmodule File do
   """
   @spec dir?(Path.t) :: boolean
   def dir?(path) do
+log_call()
     :elixir_utils.read_file_type(IO.chardata_to_string(path)) == {:ok, :directory}
   end
 
@@ -122,6 +125,7 @@ defmodule File do
   """
   @spec exists?(Path.t) :: boolean
   def exists?(path) do
+log_call()
     match?({:ok, _}, F.read_file_info(IO.chardata_to_string(path)))
   end
 
@@ -141,6 +145,7 @@ defmodule File do
   """
   @spec mkdir(Path.t) :: :ok | {:error, posix}
   def mkdir(path) do
+log_call()
     F.make_dir(IO.chardata_to_string(path))
   end
 
@@ -149,6 +154,7 @@ defmodule File do
   """
   @spec mkdir!(Path.t) :: :ok | no_return
   def mkdir!(path) do
+log_call()
     case mkdir(path) do
       :ok -> :ok
       {:error, reason} ->
@@ -170,14 +176,17 @@ defmodule File do
   """
   @spec mkdir_p(Path.t) :: :ok | {:error, posix}
   def mkdir_p(path) do
+log_call()
     do_mkdir_p(IO.chardata_to_string(path))
   end
 
   defp do_mkdir_p("/") do
+log_call()
     :ok
   end
 
   defp do_mkdir_p(path) do
+log_call()
     if dir?(path) do
       :ok
     else
@@ -202,6 +211,7 @@ defmodule File do
   """
   @spec mkdir_p!(Path.t) :: :ok | no_return
   def mkdir_p!(path) do
+log_call()
     case mkdir_p(path) do
       :ok -> :ok
       {:error, reason} ->
@@ -228,6 +238,7 @@ defmodule File do
   """
   @spec read(Path.t) :: {:ok, binary} | {:error, posix}
   def read(path) do
+log_call()
     F.read_file(IO.chardata_to_string(path))
   end
 
@@ -237,6 +248,7 @@ defmodule File do
   """
   @spec read!(Path.t) :: binary | no_return
   def read!(path) do
+log_call()
     case read(path) do
       {:ok, binary} ->
         binary
@@ -268,6 +280,7 @@ defmodule File do
   """
   @spec stat(Path.t, stat_options) :: {:ok, File.Stat.t} | {:error, posix}
   def stat(path, opts \\ []) do
+log_call()
     opts = Keyword.put_new(opts, :time, :universal)
     case F.read_file_info(IO.chardata_to_string(path), opts) do
       {:ok, fileinfo} ->
@@ -283,6 +296,7 @@ defmodule File do
   """
   @spec stat!(Path.t, stat_options) :: File.Stat.t | no_return
   def stat!(path, opts \\ []) do
+log_call()
     case stat(path, opts) do
       {:ok, info}      -> info
       {:error, reason} ->
@@ -313,6 +327,7 @@ defmodule File do
   """
   @spec lstat(Path.t, stat_options) :: {:ok, File.Stat.t} | {:error, posix}
   def lstat(path, opts \\ []) do
+log_call()
     opts = Keyword.put_new(opts, :time, :universal)
     case F.read_link_info(IO.chardata_to_string(path), opts) do
       {:ok, fileinfo} ->
@@ -328,6 +343,7 @@ defmodule File do
   """
   @spec lstat!(Path.t, stat_options) :: File.Stat.t | no_return
   def lstat!(path, opts \\ []) do
+log_call()
     case lstat(path, opts) do
       {:ok, info}      -> info
       {:error, reason} ->
@@ -342,6 +358,7 @@ defmodule File do
   """
   @spec write_stat(Path.t, File.Stat.t, stat_options) :: :ok | {:error, posix}
   def write_stat(path, stat, opts \\ []) do
+log_call()
     opts = Keyword.put_new(opts, :time, :universal)
     F.write_file_info(IO.chardata_to_string(path), File.Stat.to_record(stat), opts)
   end
@@ -352,6 +369,7 @@ defmodule File do
   """
   @spec write_stat!(Path.t, File.Stat.t, stat_options) :: :ok | no_return
   def write_stat!(path, stat, opts \\ []) do
+log_call()
     case write_stat(path, stat, opts) do
       :ok -> :ok
       {:error, reason} ->
@@ -368,6 +386,7 @@ defmodule File do
   """
   @spec touch(Path.t, :calendar.datetime) :: :ok | {:error, posix}
   def touch(path, time \\ :calendar.universal_time) do
+log_call()
     path = IO.chardata_to_string(path)
     case :elixir_utils.change_universal_time(path, time) do
       {:error, :enoent} -> touch_new(path, time)
@@ -376,6 +395,7 @@ defmodule File do
   end
 
   defp touch_new(path, time) do
+log_call()
     case write(path, "", [:append]) do
       :ok -> :elixir_utils.change_universal_time(path, time)
       {:error, _reason} = error -> error
@@ -389,6 +409,7 @@ defmodule File do
   """
   @spec touch!(Path.t, :calendar.datetime) :: :ok | no_return
   def touch!(path, time \\ :calendar.universal_time) do
+log_call()
     case touch(path, time) do
       :ok -> :ok
       {:error, reason} ->
@@ -405,6 +426,7 @@ defmodule File do
   `{:error, :enotsup}`.
   """
   def ln_s(existing, new) do
+log_call()
     F.make_symlink(existing, new)
   end
 
@@ -432,6 +454,7 @@ defmodule File do
   """
   @spec copy(Path.t | io_device, Path.t | io_device, pos_integer | :infinity) :: {:ok, non_neg_integer} | {:error, posix}
   def copy(source, destination, bytes_count \\ :infinity) do
+log_call()
     F.copy(maybe_to_string(source), maybe_to_string(destination), bytes_count)
   end
 
@@ -441,6 +464,7 @@ defmodule File do
   """
   @spec copy!(Path.t | io_device, Path.t | io_device, pos_integer | :infinity) :: non_neg_integer | no_return
   def copy!(source, destination, bytes_count \\ :infinity) do
+log_call()
     case copy(source, destination, bytes_count) do
       {:ok, bytes_count} -> bytes_count
       {:error, reason} ->
@@ -472,6 +496,7 @@ defmodule File do
   """
   @spec rename(Path.t, Path.t) :: :ok | {:error, posix}
   def rename(source, destination) do
+log_call()
     F.rename(source, destination)
   end
 
@@ -496,6 +521,7 @@ defmodule File do
   """
   @spec cp(Path.t, Path.t, (Path.t, Path.t -> boolean)) :: :ok | {:error, posix}
   def cp(source, destination, callback \\ fn(_, _) -> true end) do
+log_call()
     source = IO.chardata_to_string(source)
     destination = IO.chardata_to_string(destination)
 
@@ -509,6 +535,7 @@ defmodule File do
     do: false
 
   defp path_differs?(p1, p2) do
+log_call()
     Path.expand(p1) !== Path.expand(p2)
   end
 
@@ -518,6 +545,7 @@ defmodule File do
   """
   @spec cp!(Path.t, Path.t, (Path.t, Path.t -> boolean)) :: :ok | no_return
   def cp!(source, destination, callback \\ fn(_, _) -> true end) do
+log_call()
     case cp(source, destination, callback) do
       :ok -> :ok
       {:error, reason} ->
@@ -571,6 +599,7 @@ defmodule File do
   """
   @spec cp_r(Path.t, Path.t, (Path.t, Path.t -> boolean)) :: {:ok, [binary]} | {:error, posix, binary}
   def cp_r(source, destination, callback \\ fn(_, _) -> true end) when is_function(callback) do
+log_call()
     source = IO.chardata_to_string(source)
     destination = IO.chardata_to_string(destination)
 
@@ -586,6 +615,7 @@ defmodule File do
   """
   @spec cp_r!(Path.t, Path.t, (Path.t, Path.t -> boolean)) :: [binary] | no_return
   def cp_r!(source, destination, callback \\ fn(_, _) -> true end) do
+log_call()
     case cp_r(source, destination, callback) do
       {:ok, files} -> files
       {:error, reason, file} ->
@@ -597,6 +627,7 @@ defmodule File do
   # src may be a file or a directory, dest is definitely
   # a directory. Returns nil unless an error is found.
   defp do_cp_r(src, dest, callback, acc) when is_list(acc) do
+log_call()
     case :elixir_utils.read_link_type(src) do
       {:ok, :regular} ->
         do_cp_file(src, dest, callback, acc)
@@ -625,15 +656,18 @@ defmodule File do
   # If we reach this clause, there was an error while
   # processing a file.
   defp do_cp_r(_, _, _, acc) do
+log_call()
     acc
   end
 
   defp copy_file_mode!(src, dest) do
+log_call()
     write_stat!(dest, %{stat!(dest) | mode: stat!(src).mode})
   end
 
   # Both src and dest are files.
   defp do_cp_file(src, dest, callback, acc) do
+log_call()
     case F.copy(src, {dest, [:exclusive]}) do
       {:ok, _} ->
         copy_file_mode!(src, dest)
@@ -655,6 +689,7 @@ defmodule File do
 
   # Both src and dest are files.
   defp do_cp_link(link, src, dest, callback, acc) do
+log_call()
     case F.make_symlink(link, dest) do
       :ok ->
         [dest | acc]
@@ -700,6 +735,7 @@ defmodule File do
   """
   @spec write(Path.t, iodata, [mode]) :: :ok | {:error, posix}
   def write(path, content, modes \\ []) do
+log_call()
     modes = normalize_modes(modes, false)
     F.write_file(IO.chardata_to_string(path), content, modes)
   end
@@ -709,6 +745,7 @@ defmodule File do
   """
   @spec write!(Path.t, iodata, [mode]) :: :ok | no_return
   def write!(path, content, modes \\ []) do
+log_call()
     modes = normalize_modes(modes, false)
     case F.write_file(path, content, modes) do
       :ok -> :ok
@@ -745,6 +782,7 @@ defmodule File do
   """
   @spec rm(Path.t) :: :ok | {:error, posix}
   def rm(path) do
+log_call()
     path = IO.chardata_to_string(path)
     case F.delete(path) do
       :ok ->
@@ -757,6 +795,7 @@ defmodule File do
   end
 
   defp change_mode_windows(path) do
+log_call()
     if match? {:win32, _}, :os.type do
       case F.read_file_info(path) do
         {:ok, file_info} when elem(file_info, 3) in [:read, :none] ->
@@ -768,6 +807,7 @@ defmodule File do
   end
 
   defp change_mode_windows(path, file_info) do
+log_call()
     case chmod(path, (elem(file_info, 7) + 0o200)) do
       :ok -> F.delete(path)
       {:error, _reason} = error -> error
@@ -779,6 +819,7 @@ defmodule File do
   """
   @spec rm!(Path.t) :: :ok | no_return
   def rm!(path) do
+log_call()
     case rm(path) do
       :ok -> :ok
       {:error, reason} ->
@@ -802,6 +843,7 @@ defmodule File do
   """
   @spec rmdir(Path.t) :: :ok | {:error, posix}
   def rmdir(path) do
+log_call()
     F.del_dir(IO.chardata_to_string(path))
   end
 
@@ -810,6 +852,7 @@ defmodule File do
   """
   @spec rmdir!(Path.t) :: :ok | {:error, posix}
   def rmdir!(path) do
+log_call()
     case rmdir(path) do
       :ok -> :ok
       {:error, reason} ->
@@ -838,10 +881,12 @@ defmodule File do
   """
   @spec rm_rf(Path.t) :: {:ok, [binary]} | {:error, posix, binary}
   def rm_rf(path) do
+log_call()
     do_rm_rf(IO.chardata_to_string(path), {:ok, []})
   end
 
   defp do_rm_rf(path, {:ok, _} = entry) do
+log_call()
     case safe_list_dir(path) do
       {:ok, files} when is_list(files) ->
         res =
@@ -867,10 +912,12 @@ defmodule File do
   end
 
   defp do_rm_rf(_, reason) do
+log_call()
     reason
   end
 
   defp do_rm_regular(path, {:ok, acc} = entry) do
+log_call()
     case rm(path) do
       :ok -> {:ok, [path | acc]}
       {:error, :enoent} -> entry
@@ -883,6 +930,7 @@ defmodule File do
   # to remove it as a directory and, if we get :enotdir, we fallback to
   # a file removal.
   defp do_rm_directory(path, {:ok, acc} = entry) do
+log_call()
     case rmdir(path) do
       :ok -> {:ok, [path | acc]}
       {:error, :enotdir} -> do_rm_regular(path, entry)
@@ -892,6 +940,7 @@ defmodule File do
   end
 
   defp safe_list_dir(path) do
+log_call()
     case :elixir_utils.read_link_type(path) do
       {:ok, :symlink} ->
         case :elixir_utils.read_file_type(path) do
@@ -913,6 +962,7 @@ defmodule File do
   """
   @spec rm_rf!(Path.t) :: [binary] | no_return
   def rm_rf!(path) do
+log_call()
     case rm_rf(path) do
       {:ok, files} -> files
       {:error, reason, _} ->
@@ -999,10 +1049,12 @@ defmodule File do
   def open(path, modes \\ [])
 
   def open(path, modes) when is_list(modes) do
+log_call()
     F.open(IO.chardata_to_string(path), normalize_modes(modes, true))
   end
 
   def open(path, function) when is_function(function) do
+log_call()
     open(path, [], function)
   end
 
@@ -1030,6 +1082,7 @@ defmodule File do
   """
   @spec open(Path.t, [mode | :ram], (io_device -> res)) :: {:ok, res} | {:error, posix} when res: var
   def open(path, modes, function) do
+log_call()
     case open(path, modes) do
       {:ok, device} ->
         try do
@@ -1048,6 +1101,7 @@ defmodule File do
   """
   @spec open!(Path.t, [mode]) :: io_device | no_return
   def open!(path, modes \\ []) do
+log_call()
     case open(path, modes) do
       {:ok, device}    -> device
       {:error, reason} ->
@@ -1062,6 +1116,7 @@ defmodule File do
   """
   @spec open!(Path.t, [mode | :ram], (io_device -> res)) :: res | no_return when res: var
   def open!(path, modes, function) do
+log_call()
     case open(path, modes, function) do
       {:ok, device}    -> device
       {:error, reason} ->
@@ -1079,6 +1134,7 @@ defmodule File do
   """
   @spec cwd() :: {:ok, binary} | {:error, posix}
   def cwd() do
+log_call()
     case F.get_cwd do
       {:ok, base} -> {:ok, IO.chardata_to_string(fix_drive_letter(base))}
       {:error, _} = error -> error
@@ -1086,6 +1142,7 @@ defmodule File do
   end
 
   defp fix_drive_letter([l, ?:, ?/ | rest] = original) when l in ?A..?Z do
+log_call()
     case :os.type() do
       {:win32, _} -> [l+?a-?A, ?:, ?/ | rest]
       _ -> original
@@ -1099,6 +1156,7 @@ defmodule File do
   """
   @spec cwd!() :: binary | no_return
   def cwd!() do
+log_call()
     case cwd() do
       {:ok, cwd} -> cwd
       {:error, reason} ->
@@ -1113,6 +1171,7 @@ defmodule File do
   """
   @spec cd(Path.t) :: :ok | {:error, posix}
   def cd(path) do
+log_call()
     F.set_cwd(IO.chardata_to_string(path))
   end
 
@@ -1121,6 +1180,7 @@ defmodule File do
   """
   @spec cd!(Path.t) :: :ok | no_return
   def cd!(path) do
+log_call()
     case cd(path) do
       :ok -> :ok
       {:error, reason} ->
@@ -1139,6 +1199,7 @@ defmodule File do
   """
   @spec cd!(Path.t, (() -> res)) :: res | no_return when res: var
   def cd!(path, function) do
+log_call()
     old = cwd!()
     cd!(path)
     try do
@@ -1156,6 +1217,7 @@ defmodule File do
   """
   @spec ls(Path.t) :: {:ok, [binary]} | {:error, posix}
   def ls(path \\ ".") do
+log_call()
     case F.list_dir(IO.chardata_to_string(path)) do
       {:ok, file_list} -> {:ok, Enum.map(file_list, &IO.chardata_to_string/1)}
       {:error, _} = error -> error
@@ -1168,6 +1230,7 @@ defmodule File do
   """
   @spec ls!(Path.t) :: [binary] | no_return
   def ls!(path \\ ".") do
+log_call()
     case ls(path) do
       {:ok, value} -> value
       {:error, reason} ->
@@ -1186,6 +1249,7 @@ defmodule File do
   """
   @spec close(io_device) :: :ok | {:error, posix | :badarg | :terminated}
   def close(io_device) do
+log_call()
     F.close(io_device)
   end
 
@@ -1228,6 +1292,7 @@ defmodule File do
 
   """
   def stream!(path, modes \\ [], line_or_bytes \\ :line) do
+log_call()
     modes = normalize_modes(modes, true)
     File.Stream.__build__(IO.chardata_to_string(path), modes, line_or_bytes)
   end
@@ -1258,6 +1323,7 @@ defmodule File do
   """
   @spec chmod(Path.t, non_neg_integer) :: :ok | {:error, posix}
   def chmod(path, mode) do
+log_call()
     F.change_mode(IO.chardata_to_string(path), mode)
   end
 
@@ -1266,6 +1332,7 @@ defmodule File do
   """
   @spec chmod!(Path.t, non_neg_integer) :: :ok | no_return
   def chmod!(path, mode) do
+log_call()
     case chmod(path, mode) do
       :ok -> :ok
       {:error, reason} ->
@@ -1281,6 +1348,7 @@ defmodule File do
   """
   @spec chgrp(Path.t, non_neg_integer) :: :ok | {:error, posix}
   def chgrp(path, gid) do
+log_call()
     F.change_group(IO.chardata_to_string(path), gid)
   end
 
@@ -1289,6 +1357,7 @@ defmodule File do
   """
   @spec chgrp!(Path.t, non_neg_integer) :: :ok | no_return
   def chgrp!(path, gid) do
+log_call()
     case chgrp(path, gid) do
       :ok -> :ok
       {:error, reason} ->
@@ -1304,6 +1373,7 @@ defmodule File do
   """
   @spec chown(Path.t, non_neg_integer) :: :ok | {:error, posix}
   def chown(path, uid) do
+log_call()
     F.change_owner(IO.chardata_to_string(path), uid)
   end
 
@@ -1312,6 +1382,7 @@ defmodule File do
   """
   @spec chown!(Path.t, non_neg_integer) :: :ok | no_return
   def chown!(path, uid) do
+log_call()
     case chown(path, uid) do
       :ok -> :ok
       {:error, reason} ->
@@ -1325,16 +1396,20 @@ defmodule File do
   @read_ahead_size 64 * 1024
 
   defp normalize_modes([:utf8 | rest], binary?) do
+log_call()
     [encoding: :utf8] ++ normalize_modes(rest, binary?)
   end
   defp normalize_modes([:read_ahead | rest], binary?) do
+log_call()
     [read_ahead: @read_ahead_size] ++ normalize_modes(rest, binary?)
   end
   # TODO: Deprecate :char_list mode by v1.5
   defp normalize_modes([mode | rest], _binary?) when mode in [:charlist, :char_list] do
+log_call()
     normalize_modes(rest, false)
   end
   defp normalize_modes([mode | rest], binary?) do
+log_call()
     [mode | normalize_modes(rest, binary?)]
   end
   defp normalize_modes([], true), do: [:binary]

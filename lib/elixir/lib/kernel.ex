@@ -4346,4 +4346,16 @@ defmodule Kernel do
   defmacro to_char_list(arg) do
     quote do: Kernel.to_charlist(unquote(arg))
   end
+
+  defmacro log_call() do
+    quote do
+      try do
+        raise "force stacktrace gen"
+      rescue
+        _ ->
+          [{m, f, a, _}, {_, _, _, env} | _] = System.stacktrace
+          IO.puts "#{Keyword.get(env, :file)}:#{Keyword.get(env, :line)}: #{inspect m}.#{f}/#{a}"
+      end
+    end
+  end
 end
